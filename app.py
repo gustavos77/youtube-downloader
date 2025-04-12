@@ -7,6 +7,9 @@ cookies_content = os.getenv("COOKIES_CONTENT")
 if cookies_content:
     with open("cookies.txt", "w") as f:
         f.write(cookies_content)
+    print("cookies.txt created successfully")
+else:
+    print("COOKIES_CONTENT not found")
 
 app = Flask(__name__)
 
