@@ -1,13 +1,18 @@
-from flask import Flask, request, render_template, send_file, flash, redirect, url_for
+from flask import Flask, request, send_file, render_template
 import yt_dlp
 import os
 
-app = Flask(__name__)
-app.secret_key = "supersecretkey"
+# Cria cookies.txt a partir da variável de ambiente COOKIES_CONTENT
+cookies_content = os.getenv("COOKIES_CONTENT")
+if cookies_content:
+    with open("cookies.txt", "w") as f:
+        f.write(cookies_content)
 
-DOWNLOAD_FOLDER = os.path.join(os.getcwd(), 'downloads')
-if not os.path.exists(DOWNLOAD_FOLDER):
-    os.makedirs(DOWNLOAD_FOLDER)
+app = Flask(__name__)
+
+# Cria a pasta 'downloads' se não existir
+if not os.path.exists('downloads'):
+    os.makedirs('downloads')
 
 @app.route('/')
 def index():
@@ -15,38 +20,22 @@ def index():
 
 @app.route('/download', methods=['POST'])
 def download():
-    url = request.form.get('url')
-    if not url:
-        flash("Por favor, insira uma URL válida.")
-        return redirect(url_for('index'))
-
-    if "youtube.com" not in url and "youtu.be" not in url:
-        flash("Erro: Insira uma URL válida do YouTube.")
-        return redirect(url_for('index'))
-
+    url = request.form['url']
+    ydl_opts = {
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]',  # Baixa vídeo em MP4
+        'outtmpl': 'downloads/%(title)s.%(ext)s',  # Salva na pasta downloads
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',  # Simula navegador
+        'referer': 'https://www.youtube.com/',  # Finge que veio do YouTube
+        'noplaylist': True,  # Evita baixar playlists
+        'cookiefile': 'cookies.txt',  # Usa cookies para autenticação
+    }
     try:
-        ydl_opts = {
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'outtmpl': os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'),
-            'merge_output_format': 'mp4',
-        }
-
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            video_title = info.get('title', 'video')
-            video_filename = ydl.prepare_filename(info)
-            video_path = video_filename if os.path.exists(video_filename) else os.path.join(DOWNLOAD_FOLDER, f"{video_title}.mp4")
-
-        if not os.path.exists(video_path):
-            flash("Erro: O vídeo não pôde ser salvo corretamente.")
-            return redirect(url_for('index'))
-
-        flash(f"Vídeo '{video_title}' baixado com sucesso!")
-        return send_file(video_path, as_attachment=True, download_name=os.path.basename(video_path))
-
+            filename = ydl.prepare_filename(info)
+        return send_file(filename, as_attachment=True)
     except Exception as e:
-        flash(f"Erro ao baixar o vídeo: {str(e)}")
-        return redirect(url_for('index'))
+        return f"Erro ao baixar o vídeo: {str(e)}"
 
 if __name__ == '__main__':
     app.run(debug=True)
