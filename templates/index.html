@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baixador de Vídeos do YouTube</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Baixador de Vídeos do YouTube</h1>
+        <p>Cole a URL do vídeo abaixo e clique em "Baixar".</p>
+
+        <!-- Exibir mensagens flash (erros ou sucesso) -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formulário para inserir a URL -->
+        <form action="{{ url_for('download') }}" method="post">
+            <input type="text" name="url" placeholder="Ex.: https://www.youtube.com/watch?v=..." required>
+            <button type="submit">Baixar</button>
+        </form>
+    </div>
+</body>
+</html>
